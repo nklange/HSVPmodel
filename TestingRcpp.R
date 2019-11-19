@@ -74,10 +74,73 @@ int_j_plus_r <- function(x, pars, radian) {
 Rcpp::sourceCpp("Rcpp/cint_fun_J_RNplus.cpp")
 
 microbenchmark::microbenchmark(
-int_j_plus_r(c(0,1,10,100), pars = c(20, 2, 30),radian=0.5),
-cint_fun_J_RNplus(c(0,1,10,100), pars = c(20, 2, 30),radian=0.5)
+int_j_plus_r(c(1:1000), pars = c(20, 2, 30),radian=0.5),
+cint_fun_J_RNplus(c(1:1000), pars = c(20, 2, 30),radian=0.5)
 )
 
-# currently R 4 : 1 Rcpp
+# currently R 2 : 1 Rcpp
 # rcpp version needs normalizing of results and default to J at >kappa_map
 # looks like numint benefits from rcpp but simulation doesn't
+
+
+# simJRNplus --------------------
+sim_mk_plus_r <- function(x, pars, baseradians) {
+  
+  kappa_r <- pars[3]
+  kappas <- rgamma(x, shape = pars[1]/pars[2], scale = pars[2])
+  
+  
+  pchoose <- vector("numeric", 181)
+  kc <- vector("numeric",181)
+  
+  for (i in seq_len(x)) {
+    
+    kc <- sqrt(kappa_r^2 + kappas[i]^2 + 2 * kappa_r*kappas[i]*cos(baseradians))
+    
+    pchoose <- pchoose + 
+      ((besselI(kc,0,expon.scaled = TRUE) / 
+          (2*pi*besselI(kappas[i],0,expon.scaled = TRUE) * 
+             besselI(kappa_r,0,expon.scaled = TRUE))) *
+         exp(kc - (kappas[i] + kappa_r)))
+    
+  }
+  pchoose/sum(pchoose)
+  
+}
+Rcpp::sourceCpp("Rcpp/csim_fun_MK_RNplus.cpp")
+
+
+microbenchmark::microbenchmark(
+  sim_mk_plus_r(1000, pars = c(20, 2, 30),baseradians = base_radians),
+  csim_fun_MK_RNplus(1000, pars = c(20, 2, 30),baseradians = base_radians)
+)
+# currently R 1: 2 Rcpp
+
+# numintMKRNplus ----------------------------------
+
+int_mk_plus_r <- function(x, pars, radian) {
+  out <- vector("numeric", length(x))
+  
+  for (i in seq_along(x)) {
+    
+    kappa <- x[i]
+    kc <- sqrt(pars[3]^2 + kappa^2 + 2 * pars[3]* kappa*cos(radian))
+    
+    out[i] <- dgamma(kappa, shape = pars[1]/pars[2], scale = pars[2]) * 
+      ((besselI(x = kc,0,expon.scaled = TRUE) / 
+          (2*pi*besselI(x = kappa,0,expon.scaled = TRUE) * 
+             besselI(x = pars[3],0,expon.scaled = TRUE))) * 
+         exp(kc - (kappa + pars[3])))
+    
+  }
+  out
+}
+Rcpp::sourceCpp("Rcpp/cint_fun_MK_RNplus.cpp")
+
+microbenchmark::microbenchmark(
+  int_mk_plus_r(c(1:1000), pars = c(20, 2, 30),radian=0.5),
+  cint_fun_MK_RNplus(c(1:1000), pars = c(20, 2, 30),radian=0.5)
+)
+
+# Rcpp slightly faster
+
