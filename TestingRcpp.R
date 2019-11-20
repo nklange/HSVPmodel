@@ -4,6 +4,7 @@ library("circular")
 library("parallel")
 library("microbenchmark")
 
+source("nlminbNumIntFunctions.R")
 
 base_radians <- circular((0:180) * 2 * pi/360)
 
@@ -142,5 +143,19 @@ microbenchmark::microbenchmark(
   cint_fun_MK_RNplus(c(1:1000), pars = c(20, 2, 30),radian=0.5)
 )
 
-# Rcpp slightly faster
+# MKRNminus --------------
+
+Rcpp::sourceCpp("Rcpp/cint_fun_MK_RNminus.cpp")
+microbenchmark::microbenchmark(
+  int_fun_MK_RNminus(c(1:10), pars = c(20, 2),radian=0.5),
+  cint_fun_MK_RNminus(x = c(1:10), pars = c(20, 2),radian=0.5)
+)
+
+# JRNminus --------------------
+
+Rcpp::sourceCpp("Rcpp/cint_fun_J_RNminus.cpp")
+microbenchmark::microbenchmark(
+  int_fun_J_RNminus(c(1:10), pars = c(20, 2),radian=0.5),
+  cint_fun_J_RNminus(x = c(1:10), pars = c(20, 2),radian=0.5)
+)
 

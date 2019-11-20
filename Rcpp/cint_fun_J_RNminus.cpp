@@ -11,6 +11,8 @@ using namespace Rcpp;
 //   http://gallery.rcpp.org/
 //
 
+
+
 NumericVector LinearSpacedArray(double a, double b, double N)
 {
   double h = (b - a) / (N-1);
@@ -69,53 +71,53 @@ NumericVector allJ(NumericVector Kmap){
 
 NumericVector Jmap = allJ(Kmap);
 
-
+// approxfun linear approximation steal
 double cKappaFromJ(double J){
   
   double v = J;
   NumericVector y = Kmap;
   NumericVector x = Jmap;
   
+  
   /* Approximate  y(v),  given (x,y)[i], i = 0,..,n-1 */
   int n = Jmap.size();
+
+    int i, j, ij;
+    
+    //if(!n) return R_NaN;
+    
+    i = 0;
+    j = n - 1;
+    
+    /* handle out-of-domain points */
+    //if(v < x[i]) return Meth->ylow;
+    //if(v > x[j]) return Meth->yhigh;
+    
+    /* find the correct interval by bisection */
+    while(i < j - 1) { /* x[i] <= v <= x[j] */
+    ij = (i + j)/2; /* i+1 <= ij <= j-1 */
+    if(v < x[ij]) j = ij; else i = ij;
+    /* still i < j */
+    }
+    /* provably have i == j-1 */
+    
+    /* interpolation */
+    
+    if(v == x[j]) return y[j];
+    if(v == x[i]) return y[i];
+    /* impossible: if(x[j] == x[i]) return y[i]; */
+    
+    //if(Meth->kind == 1) /* linear */
+    return y[i] + (y[j] - y[i]) * ((v - x[i])/(x[j] - x[i]));
+    // else /* 2 : constant */
+    //return (Meth->f1 != 0.0 ? y[i] * Meth->f1 : 0.0)
+    //  + (Meth->f2 != 0.0 ? y[j] * Meth->f2 : 0.0);
   
-  
-  int i, j, ij;
-  
-  //if(!n) return R_NaN;
-  
-  i = 0;
-  j = n - 1;
-  
-  /* handle out-of-domain points */
-  //if(v < x[i]) return Meth->ylow;
-  //if(v > x[j]) return Meth->yhigh;
-  
-  /* find the correct interval by bisection */
-  while(i < j - 1) { /* x[i] <= v <= x[j] */
-  ij = (i + j)/2; /* i+1 <= ij <= j-1 */
-  if(v < x[ij]) j = ij; else i = ij;
-  /* still i < j */
-  }
-  /* provably have i == j-1 */
-  
-  /* interpolation */
-  
-  if(v == x[j]) return y[j];
-  if(v == x[i]) return y[i];
-  /* impossible: if(x[j] == x[i]) return y[i]; */
-  
-  //if(Meth->kind == 1) /* linear */
-  return y[i] + (y[j] - y[i]) * ((v - x[i])/(x[j] - x[i]));
-  // else /* 2 : constant */
-  //return (Meth->f1 != 0.0 ? y[i] * Meth->f1 : 0.0)
-  //  + (Meth->f2 != 0.0 ? y[j] * Meth->f2 : 0.0);
 }
 
 
-
 // [[Rcpp::export]]
-NumericVector cint_fun_J_RNplus(
+NumericVector cint_fun_J_RNminus(
     NumericVector x,
     NumericVector pars, 
     double radian) {
@@ -123,7 +125,6 @@ NumericVector cint_fun_J_RNplus(
   int i;
   int lx = x.size();
   double kappa;
-  double kc;
   NumericVector out(lx);
   
   for (i = 0; i < lx; i++) {
@@ -134,23 +135,18 @@ NumericVector cint_fun_J_RNplus(
     kappa = cKappaFromJ(x[i]);
     }
     
-    kc = sqrt(pow(pars[2], 2) + pow(kappa, 2) + 2 * pars[2]*kappa*cos(radian));
-    // Rcout << pow(pars[3], 2) << std::endl;
-    // Rcout << kc << std::endl;
-    
     out[i] = R::dgamma(x[i], pars[0]/pars[1], pars[1], 0) * 
-      ((R::bessel_i(kc,0,2) / 
-      (2*PI*R::bessel_i(kappa,0,2) * 
-      R::bessel_i(pars[2],0,2))) *
-      exp(kc - (kappa + pars[2])));
+      (1 / (2*PI*R::bessel_i(kappa,0,2)) * 
+      pow(exp(cos(radian) - 1),kappa));
     
   }
   return(out);
 }
 
-// // [[Rcpp::export]]
-// void rcpp_rcout(double x){
-// 
-//   // printing value of vector
-//   Rcout << "The value of v : " << Jmap << "\n";
-// }
+
+// You can include R code blocks in C++ files processed with sourceCpp
+// (useful for testing and development). The R code will be automatically 
+// run after the compilation.
+//
+
+
