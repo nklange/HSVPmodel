@@ -10,7 +10,7 @@ ll_vp_full <- function(pars, model, error_list, set_sizes, ll_fun, type,...) {
   
   out <- vector("numeric", length(set_sizes))
   for (i in seq_along(error_list)) {
-   i <- 1
+   #i <- 1
     out[[i]] <- ll_fun(pars = c(precision[i],parscont), 
                        errors = error_list[[i]],
                        model = model,
