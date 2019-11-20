@@ -57,14 +57,14 @@ fit_one_vp_nlminb <- function(model, data, startpar, rep, objective, ll_fun, low
   out_list <- vector("list", rep)
 
   #startpar <- data.frame(do.call(rbind, startpar))
-  startpar <- startpar %>% filter(cvid == dp$cvid) %>% select(names(get_start_vp(model)))
+  startpar <- startpar[[1]] %>% filter(cvid == dp$cvid) %>% select(names(get_start_vp(model)))
   startpar <- as.data.frame(startpar)
   
   for (i in seq_len(rep)) {
     
     tic <- Sys.time()
   
-    start <- as.vector(t(startpar[i,]))
+    start <- unlist(startpar)
 
     tmp <- tryCatch(nlminb(start, objective = objective, 
                            error_list = dp$datalist, set_sizes = dp$set_sizes, 
@@ -99,7 +99,7 @@ fit_one_vp_nlminb <- function(model, data, startpar, rep, objective, ll_fun, low
          , tibble (
           cvid = dp$cvid
          )
-        , start %>% #spread(enframe(start, "start"), start, value) %>%
+        , spread(enframe(start, "start"), start, value) %>%
           setNames(paste0("s_",names(get_start_vp(model))))
       )
     } 

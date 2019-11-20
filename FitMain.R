@@ -33,11 +33,11 @@ nrep <- 1
 test <- datprep[16,] %>%
   mutate(fit_ga_MK_RNplus = mclapply(data, fit_one_vp_ga, rep = nrep, objective = ll_vp_full,
                                 model = "MK_RNplus", ll_fun = sim_fun_MK_RNplus,
-                                lower = lowerRNplus, upper = upperRNplus, mc.cores = 16, mc.preschedule = FALSE) )  %>% 
+                                lower = lowerRNplus, upper = upperRNplus, mc.cores = 1, mc.preschedule = FALSE) )  %>% 
   mutate(fit_nlminb_MK_RNplus = mclapply(data, fit_one_vp_nlminb, rep = nrep,
                                          startpar = fit_ga_MK_RNplus ,
                                          model = "MK_RNplus", objective = ll_vp_full, ll_fun = ll_vp3, type = "r",
-                                         lower = .Machine$double.eps, upper = Inf, mc.cores = 16, mc.preschedule = FALSE))
+                                         lower = .Machine$double.eps, upper = Inf, mc.cores = 1, mc.preschedule = FALSE))
 
 
 # load some GA fitted data
